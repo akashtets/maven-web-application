@@ -1,0 +1,58 @@
+pipeline{
+    
+    //agent any
+    agent{
+    label "nodes"
+    }
+    
+    
+    tools{
+        maven "maven3.8.6"
+    }
+    
+    //get the code from github
+    
+    stages{
+        stage('checkoutcode'){
+          
+            steps{
+                 
+            git credentialsId: 'e3889888-d229-4e81-ae07-bd84fed2e643', url: 'https://github.com/akashtets/maven-web-application.git'
+            }
+        }
+    
+    //do the build
+    stage('Build'){
+        steps{
+            sh "mvn clean package"
+            
+        }
+    }
+    
+    //Execute Sonarqube Report
+    stage('Execute Soanr qube report'){
+        steps{
+            sh "mvn sonar:sonar"
+        }
+    }
+    
+    //Upload Artifacts Into Nexus
+    stage('Upload artificats into nexus'){
+        steps{
+            sh "mvn deploy"
+        }
+    }
+    
+    //Deploy Application Into Tomcat Server
+    stage('Deploying tomcat server'){
+        steps{
+            sshagent(['efce9d6b-5194-4af4-82ce-1b30b8fee8c2']) {
+    sh "scp -o  StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.109.59.15:/opt/apache-tomcat-9.0.64/webapps"
+        }
+        }
+    }
+}//stages closing
+
+
+
+}//pipeline closing
